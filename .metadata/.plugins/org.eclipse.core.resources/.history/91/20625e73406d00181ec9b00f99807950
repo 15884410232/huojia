@@ -1,0 +1,104 @@
+package com.test.shrio;
+
+
+import org.apache.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.*;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.Subject;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.alibaba.druid.util.StringUtils;
+import com.test.bean.User;
+import com.test.service.UserService;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+public class Real extends AuthorizingRealm {
+    private Logger logger = Logger.getLogger(getClass());
+	@Autowired
+	private UserService userService;
+	
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+        String userName = (String)super.getAvailablePrincipal(principalCollection);
+        if(null!=userName&&!"".equals(userName)){
+            //从数据库中获取当前登录用户的详细信息
+            User sysUser = userService.findUser(userName, password);
+            if(sysUser == null){
+                throw new AuthorizationException();
+            }
+            //为当前用户设置角色和权限
+            SimpleAuthorizationInfo simpleAuthorInfo = new SimpleAuthorizationInfo();
+            List<String> roleList = new ArrayList<String>();
+            SysRoleParam sysRoleParam = new SysRoleParam();
+            sysRoleParam.setUserId(sysUser.getId());
+            sysRoleParam.setOrgId(sysUser.getOrgId());
+            List<SysRole> sysRoles = sysRoleService.roleListByUser(sysRoleParam);
+            for(SysRole sysRole : sysRoles){
+                roleList.add(sysRole.getId());
+            }
+            List<String> permissionList = new ArrayList<String>();
+            SysResourceParam param = new SysResourceParam();
+            param.setRoleList(roleList);
+            List<SysResource> sysResourceList = sysResourceService.resourceListByRole(param);
+            for(SysResource sysResource : sysResourceList){
+                permissionList.add(sysResource.getId());
+            }
+            simpleAuthorInfo.addRoles(roleList);
+            simpleAuthorInfo.addStringPermissions(permissionList);
+            return simpleAuthorInfo;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+    	logger.debug("登录验证:[{}]",token);
+		UsernamePasswordToken upToken = (UsernamePasswordToken) token;
+		if(!StringUtils.hasText(upToken.getUsername())) throw new UnknownAccountException("必须输入账号或密码！");
+		if(upToken.getPassword()==null || upToken.getPassword().length<=0)  throw new UnknownAccountException("必须输入账号或密码！");
+		
+		logger.debug("查找用户");
+		User user=userService.findByCd(upToken.getUsername());
+		if(user==null||StaticEntity.STATE_DISABLED.equals(user.getState())) throw new UnknownAccountException("账户不存在或账户已经停用");
+		
+		logger.debug("查找用户[{}]的应用",upToken.getUsername());
+		List<Application> apps=permissionService.findAppByUser(upToken.getUsername(),user.getIsAdmin()==1); //账号能操作的所有应用
+		logger.debug("查找到应用[{}]",apps);
+		
+		if(apps==null||apps.isEmpty()) throw new UnknownAccountException("该账户不能操作任何应用");
+		logger.debug("1.写入会话开始");
+		setSession(BaseController.ACCOUNTKEY,user);//写入用户信息到回话中
+		setSession("apps", apps); 		   //所有应用				
+		setSession("currApp", apps.get(0));//当前选择的应用
+		setSession("menus", permissionService.findByUser(upToken.getUsername(),apps.get(0).getAppCd(),null,user.getIsAdmin()==1));//当前应用的菜单		
+        //此处无需比对,比对的逻辑Shiro会做,我们只需返回一个和令牌相关的正确的验证信息  
+        //说白了就是第一个参数填登录用户名,第二个参数填合法的登录密码(可以是从数据库中取到的  
+        //这样一来,在随后的登录页面上就只有这里指定的用户和密码才能通过验证
+		logger.debug("1.写入会话完成");
+		return new SimpleAuthenticationInfo(user.getUserCd(),user.getPassword(),ByteSource.Util.bytes(user.getUserCd()),getName());
+    }
+
+    /**
+     * 将一些数据放到ShiroSession中,以便于其它地方使用
+     * 比如Controller,使用时直接用HttpSession.getAttribute(key)就可以取到
+     */
+    private void setSession(String key, Object value){
+        Subject currentUser = SecurityUtils.getSubject();
+        if(null != currentUser){
+            Session session = currentUser.getSession();
+            if(null != session){
+                session.setAttribute(key, value);
+            }
+        }
+    }
+}

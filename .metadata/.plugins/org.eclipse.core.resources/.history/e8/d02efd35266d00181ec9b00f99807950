@@ -1,0 +1,52 @@
+package com.test.bean;
+/**
+ * 每层货物信息
+ * @author Chenqi
+ *
+ */
+public class Floor {
+	//货架层ID
+	private String floorId;
+	//列1
+	private String floorCol1;
+	//列2
+	private String floorCol2;
+	//列3
+	private String floorCol3;
+	//列4
+	private String floorCol4;
+	//列5
+	private String floorCol5;
+	//列6
+	private String floorCol6;
+	//列7
+	private String floorCol7;
+	//列8
+	private String floorCol8;
+	//列9
+	private String floorCol9;
+	//列10
+	private String floorCol10;
+	
+	//列1库存
+	private Integer floorCol1stock;
+	//列2库存
+	private Integer floorCol2stock;
+	//列3库存
+	private Integer floorCol3stock;
+	//列4库存
+	private Integer floorCol4stock;
+	//列5库存
+	private Integer floorCol5stock;
+	//列6库存
+	private Integer floorCol6stock;
+	//列7库存
+	private Integer floorCol7stock;
+	//列8库存
+	private Integer floorCol8stock;
+	//列9库存
+	private Integer floorCol9stock;
+	//列10库存
+	private Integer floorCol10stock;
+
+}

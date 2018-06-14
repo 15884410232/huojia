@@ -1,0 +1,10 @@
+package com.test.bean;
+
+/**
+ * 商品信息
+ * @author Chenqi
+ *
+ */
+public class Product {
+
+}

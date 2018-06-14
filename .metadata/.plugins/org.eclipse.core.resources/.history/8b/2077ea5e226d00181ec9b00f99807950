@@ -1,0 +1,13 @@
+package com.test.bean;
+
+public class Huojia {
+	//货架名称
+	private String huojiaName;
+	//货架地址
+	private String huojiaAddress;
+	//货架二维码字节数据
+	private String huojiaqRcode;
+	//货架的层数
+	private String huojiaFloor;
+
+}

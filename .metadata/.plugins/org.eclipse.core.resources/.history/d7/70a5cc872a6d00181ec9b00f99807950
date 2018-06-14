@@ -1,0 +1,14 @@
+package com.test.bean;
+/**
+ * 订单信息
+ * @author Chenqi
+ *
+ */
+public class Order extends Base{
+	//订单ID
+	private String orderId;
+	//用户Id
+	private String userID;
+	
+
+}

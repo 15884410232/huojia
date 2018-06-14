@@ -1,0 +1,11 @@
+package com.test.bean;
+
+public class UserRole {
+
+	//id
+	private String id;
+	//ÓÃ»§id
+	private String userId;
+	//½ÇÉ«Id
+	private String roleId;
+}

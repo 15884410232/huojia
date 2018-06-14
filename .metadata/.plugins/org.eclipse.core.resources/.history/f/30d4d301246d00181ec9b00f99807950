@@ -1,0 +1,9 @@
+package com.test.bean;
+/**
+ * 每层货物信息
+ * @author Chenqi
+ *
+ */
+public class Floor {
+
+}

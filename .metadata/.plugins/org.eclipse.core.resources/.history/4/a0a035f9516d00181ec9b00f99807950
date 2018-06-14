@@ -1,0 +1,19 @@
+package com.test.bean;
+
+/**
+ * 资源表
+ * @author Chenqi
+ *
+ */
+public class Resource extends Base{
+	
+	//资源id
+	private String resourceId;
+	//资源地址
+	private String resource;
+	//资源名字
+	private String resourceName;
+	//资源描述
+	private String resourceDesc;
+	
+}

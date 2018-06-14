@@ -1,0 +1,11 @@
+package com.test.bean;
+
+public class Permission {
+	//权限id
+	private String permissionId;
+	//用户id
+	private String userId;
+	//jueseId
+	private String roleId;
+
+}

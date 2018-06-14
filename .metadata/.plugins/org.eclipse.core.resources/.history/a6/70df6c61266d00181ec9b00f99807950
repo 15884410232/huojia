@@ -1,0 +1,14 @@
+package com.test.bean;
+
+/**
+ * 商品信息
+ * @author Chenqi
+ *
+ */
+public class Product {
+
+	//商品id
+	private String productId;
+	//库存	
+	private Integer productStock;
+}

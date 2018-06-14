@@ -1,0 +1,10 @@
+package com.test.bean;
+
+public class Huojia {
+	//货架名称
+	private String huojiaName;
+	//货架地址
+	private String huojiaAddress;
+	//货架二维码流
+
+}

@@ -1,0 +1,91 @@
+package com.test.shrio;
+
+
+import org.apache.log4j.Logger;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.authc.*;
+import org.apache.shiro.authz.AuthorizationException;
+import org.apache.shiro.authz.AuthorizationInfo;
+import org.apache.shiro.authz.SimpleAuthorizationInfo;
+import org.apache.shiro.realm.AuthorizingRealm;
+import org.apache.shiro.session.Session;
+import org.apache.shiro.subject.PrincipalCollection;
+import org.apache.shiro.subject.Subject;
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.test.bean.User;
+import com.test.service.UserService;
+
+import java.util.ArrayList;
+import java.util.List;
+
+
+public class Real extends AuthorizingRealm {
+    private Logger logger = Logger.getLogger(getClass());
+	@Autowired
+	private UserService userService;
+	
+    @Override
+    protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
+        String username = (String)super.getAvailablePrincipal(principalCollection);
+        if(null!=username&&!"".equals(username)){
+            //从数据库中获取当前登录用户的详细信息
+            User sysUser = userService.findUser(userName, password)(username).getDataInfo();
+            if(sysUser == null){
+                throw new AuthorizationException();
+            }
+            //为当前用户设置角色和权限
+            SimpleAuthorizationInfo simpleAuthorInfo = new SimpleAuthorizationInfo();
+            List<String> roleList = new ArrayList<String>();
+            SysRoleParam sysRoleParam = new SysRoleParam();
+            sysRoleParam.setUserId(sysUser.getId());
+            sysRoleParam.setOrgId(sysUser.getOrgId());
+            List<SysRole> sysRoles = sysRoleService.roleListByUser(sysRoleParam);
+            for(SysRole sysRole : sysRoles){
+                roleList.add(sysRole.getId());
+            }
+            List<String> permissionList = new ArrayList<String>();
+            SysResourceParam param = new SysResourceParam();
+            param.setRoleList(roleList);
+            List<SysResource> sysResourceList = sysResourceService.resourceListByRole(param);
+            for(SysResource sysResource : sysResourceList){
+                permissionList.add(sysResource.getId());
+            }
+            simpleAuthorInfo.addRoles(roleList);
+            simpleAuthorInfo.addStringPermissions(permissionList);
+            return simpleAuthorInfo;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    protected AuthenticationInfo doGetAuthenticationInfo(AuthenticationToken authenticationToken) throws AuthenticationException {
+        UsernamePasswordToken token = (UsernamePasswordToken) authenticationToken;
+        SysUser sysUser = sysUserService.getByUsername(token.getUsername()).getDataInfo();
+        if (null != sysUser) {
+            String password = Encodes.encodeToMD5(new String(token.getPassword()) + sysUser.getSalt());
+            token.setPassword(password.toCharArray());
+            AuthenticationInfo authcInfo = new SimpleAuthenticationInfo(sysUser.getUsername(), sysUser.getPassword(), sysUser.getName());
+            this.setSession(SysConstant.USER_SESSION, sysUser);
+            return authcInfo;
+        } else {
+            return null;
+        }
+        //没有返回登录用户名对应的SimpleAuthenticationInfo对象时,就会在LoginController中抛出UnknownAccountException异常
+    }
+
+    /**
+     * 将一些数据放到ShiroSession中,以便于其它地方使用
+     * 比如Controller,使用时直接用HttpSession.getAttribute(key)就可以取到
+     */
+    private void setSession(String key, Object value){
+        Subject currentUser = SecurityUtils.getSubject();
+        if(null != currentUser){
+            Session session = currentUser.getSession();
+            if(null != session){
+                session.setAttribute(key, value);
+            }
+        }
+    }
+}

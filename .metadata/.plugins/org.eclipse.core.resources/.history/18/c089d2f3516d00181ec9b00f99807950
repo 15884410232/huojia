@@ -1,0 +1,11 @@
+package com.test.bean;
+
+/**
+ * ×ÊÔ´±í
+ * @author Chenqi
+ *
+ */
+public class Resource extends Base{
+	
+	private String resourceId;
+}
